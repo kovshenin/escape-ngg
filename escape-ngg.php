@@ -31,15 +31,6 @@ add_action( 'admin_init', function() {
 	ini_set( 'display_errors', 1 );
 	set_time_limit( 600 );
 
-	$posts = get_posts( array(
-		's' => '[nggallery',
-		'post_type' => array( 'post', 'page' ),
-		'post_status' => 'any',
-		'posts_per_page' => 50,
-		'orderby' => 'ID',
-		'order' => 'DESC',
-	) );
-
 	$uploads = wp_upload_dir();
 	$baseurl = $uploads['baseurl'];
 	$count = array(
