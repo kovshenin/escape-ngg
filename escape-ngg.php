@@ -125,7 +125,9 @@ add_action( 'admin_init', function() {
 			$gallery .= ']';
 
 			// Booyaga!
+			$pristine_content = $post->post_content;
 			$post->post_content = preg_replace( '#\[nggallery[^\]]*\]#i', $gallery, $post->post_content );
+			$post->post_content = apply_filters( 'engg_post_content', $post->post_content, $pristine_content, $attr, $post, $gallery );
 			wp_update_post( $post );
 			$query['offset']--; // Since this post will no longer contain the [nggallery] it won't count against our offset
 			$count['posts']++;
