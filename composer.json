@@ -13,5 +13,5 @@
 	"require": {
 		"composer/installers"        : "~1.0"
 	},
-	"minimum-stability": "dev",
+	"minimum-stability": "dev"
 }
