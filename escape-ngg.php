@@ -78,6 +78,8 @@ add_action( 'admin_init', function() {
 
 			foreach ( $images as $image ) {
 				$url = home_url( trailingslashit( $path['path'] ) . $image->filename );
+				$url = apply_filters( 'engg_image_url', $url, $path['path'], $image->filename );
+				
 
 				// Let's use a hash trick here to find our attachment post after it's been sideloaded.
 				$hash = md5( 'attachment-hash' . $url . $image->description . time() . rand( 1, 999 ) );
