@@ -187,17 +187,21 @@ class Escape_NextGen_Gallery {
 			// Let's use a hash trick here to find our attachment post after it's been sideloaded.
 			$hash = md5( 'attachment-hash' . $url . $image->description . time() . rand( 1, 999 ) );
 
-			media_sideload_image( $url, $post->ID, $hash );
-			$attachments = get_posts( array(
-				'post_parent' => $post->ID,
-				's' => $hash,
-				'post_type' => 'attachment',
-				'posts_per_page' => -1,
-			) );
+			$result = media_sideload_image( $url, $post->ID, $hash );
+			if ( is_wp_error( $result ) ) {
+				$this->warnings[] = sprintf( "Error loading %s: %s", $url, $result->get_error_message() );
+			} else {
+				$attachments = get_posts( array(
+					'post_parent' => $post->ID,
+					's' => $hash,
+					'post_type' => 'attachment',
+					'posts_per_page' => -1,
+				) );
 
-			if ( ! $attachments || ! is_array( $attachments ) || count( $attachments ) != 1 ) {
-				$this->warnings[] = sprintf( "Could not insert attachment for %d", $post->ID );
-				continue;
+				if ( ! $attachments || ! is_array( $attachments ) || count( $attachments ) != 1 ) {
+					$this->warnings[] = sprintf( "Could not insert attachment for %d", $post->ID );
+					continue;
+				}
 			}
 
 			// Titles should fallback to the filename.
