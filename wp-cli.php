@@ -35,7 +35,8 @@ class ENGG_Command extends WP_CLI_Command {
 	 * 
 	 */
 	public function convert() {
-		WP_CLI::log( sprintf( 'Processing %d posts with NextGen Gallery shortcodes', Escape_NextGen_Gallery::init()->count() ) );
+		$count = Escape_NextGen_Gallery::init()->count();
+		WP_CLI::log( sprintf( 'Processing %d posts with NextGen Gallery shortcodes', $count ) );
 		set_time_limit( 0 );
 
 		$uploads = wp_upload_dir();
@@ -43,10 +44,14 @@ class ENGG_Command extends WP_CLI_Command {
 
 		$post_ids = Escape_NextGen_Gallery::init()->get_post_ids();
 		
+		$progress = new \cli\progress\Bar( 'Progress',  $count );
+
 		foreach ( $post_ids as $post_id ) {
+			$progress->tick();
 			Escape_NextGen_Gallery::init()->process_post( $post_id );
-			break;
 		}
+
+		$progress->finish();
 
 		foreach ( Escape_NextGen_Gallery::init()->infos as $info )
 			WP_CLI::log( $info );
