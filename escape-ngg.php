@@ -114,9 +114,10 @@ class Escape_NextGen_Gallery {
 		
 		foreach ( $post_ids as $post_id ) {
 			$this->process_post( $post_id );
+			break;
 		}
 
-		$this->infos[] = sprintf( "Updated %d posts with %d images.", $this->posts_count, $this->images_count );
+		$this->infos[] = sprintf( "Updated %d posts and %d images.", $this->posts_count, $this->images_count );
 
 		foreach ( $this->infos as $info )
 			printf( '<span style="color: #090;">%s</span><br />', esc_html( $info ) );
