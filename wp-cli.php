@@ -20,7 +20,7 @@ class ENGG_Command extends WP_CLI_Command {
 	 * wp escape-ngg count
 	 * 
 	 */
-	public function count( $args, $assoc_args ) {
+	public function count() {
 		WP_CLI::log( Escape_NextGen_Gallery::init()->count() );
 	}
 
@@ -34,7 +34,7 @@ class ENGG_Command extends WP_CLI_Command {
 	 * wp escape-ngg convert
 	 * 
 	 */
-	public function convert( $args, $assoc_args ) {
+	public function convert() {
 
 	}
 
