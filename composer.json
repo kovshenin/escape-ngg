@@ -1,0 +1,17 @@
+{
+	"name": "kovshenin/escape-ngg",
+	"description": "Converts NextGen Galleries to native WordPress Galleries. Read code for instructions.",
+	"homepage"   : "https://github.com/kovshenin/escape-ngg/",
+	"license"    : "GPL-2.0+",
+	"type"       : "wordpress-plugin",
+	"authors"    : [
+		{
+			"name"    : "Konstantin Kovshenin",
+			"homepage": "http://kovshenin.com/"
+		}
+	],
+	"require": {
+		"composer/installers"        : "~1.0"
+	},
+	"minimum-stability": "dev"
+}

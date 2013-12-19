@@ -78,6 +78,8 @@ add_action( 'admin_init', function() {
 
 			foreach ( $images as $image ) {
 				$url = home_url( trailingslashit( $path['path'] ) . $image->filename );
+				$url = apply_filters( 'engg_image_url', $url, $path['path'], $image->filename );
+				
 
 				// Let's use a hash trick here to find our attachment post after it's been sideloaded.
 				$hash = md5( 'attachment-hash' . $url . $image->description . time() . rand( 1, 999 ) );
@@ -123,7 +125,9 @@ add_action( 'admin_init', function() {
 			$gallery .= ']';
 
 			// Booyaga!
+			$pristine_content = $post->post_content;
 			$post->post_content = preg_replace( '#\[nggallery[^\]]*\]#i', $gallery, $post->post_content );
+			$post->post_content = apply_filters( 'engg_post_content', $post->post_content, $pristine_content, $attr, $post, $gallery );
 			wp_update_post( $post );
 			$query['offset']--; // Since this post will no longer contain the [nggallery] it won't count against our offset
 			$count['posts']++;
