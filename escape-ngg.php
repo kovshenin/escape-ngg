@@ -109,9 +109,6 @@ class Escape_NextGen_Gallery {
 		ini_set( 'display_errors', 1 );
 		set_time_limit( 600 );
 
-		$uploads = wp_upload_dir();
-		$baseurl = $uploads['baseurl'];
-
 		$post_ids = $this->get_post_ids();
 		
 		foreach ( $post_ids as $post_id ) {
