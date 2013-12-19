@@ -37,28 +37,28 @@ class Escape_NextGen_Gallery {
 	 *
 	 * @var int
 	 **/
-	protected $images_count;
+	public $images_count;
 
 	/**
 	 * The number of posts converted
 	 *
 	 * @var int
 	 **/
-	protected $posts_count;
+	public $posts_count;
 
 	/**
 	 * Any warnings encountered
 	 *
 	 * @var array
 	 **/
-	protected $warnings;
+	public $warnings;
 
 	/**
 	 * Information about what's happened
 	 *
 	 * @var array
 	 **/
-	protected $infos;
+	public $infos;
 
 	/**
 	 * Singleton stuff.
