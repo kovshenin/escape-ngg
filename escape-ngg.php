@@ -22,6 +22,60 @@
  */
 
 add_action( 'admin_init', function() {
+
+/**
+ * 
+ * 
+ * @package 
+ **/
+class Escape_NextGen_Gallery {
+
+	/**
+	 * A version integer.
+	 *
+	 * @var int
+	 **/
+	var $version;
+
+	/**
+	 * Singleton stuff.
+	 * 
+	 * @access @static
+	 * 
+	 * @return Escape_NextGen_Gallery object
+	 */
+	static public function init() {
+		static $instance = false;
+
+		if ( ! $instance )
+			$instance = new Escape_NextGen_Gallery;
+
+		return $instance;
+
+	}
+
+	/**
+	 * Class constructor
+	 *
+	 * @return null
+	 */
+	public function __construct() {
+		add_action( 'admin_init', array( $this, 'action_admin_init' ) );
+
+		$this->version = 1;
+	}
+
+	// HOOKS
+	// =====
+
+	/**
+	 * Hooks the WP action admin_init
+	 *
+	 * @action admin_init
+	 *
+	 * @return void
+	 **/
+	public function action_admin_init() {
 	global $post, $wpdb;
 
 	if ( ! isset( $_GET['escape_ngg_please'] ) || ! current_user_can( 'install_plugins' ) )
@@ -45,6 +99,7 @@ add_action( 'admin_init', function() {
 		'posts_per_page' => 50,
 		'offset' => 0,
 	);
+
 
 	while ( $posts = get_posts( $query ) ) {
 		foreach ( $posts as $post ) {
@@ -137,4 +192,15 @@ add_action( 'admin_init', function() {
 
 	printf( "Updated %d posts with %d images.", $count['posts'], $count['images'] );
 	die();
-});
+	}
+
+	// CALLBACKS
+	// =========
+
+	// UTILITIES
+	// =========
+
+}
+
+// Initiate the singleton
+Escape_NextGen_Gallery::init();
