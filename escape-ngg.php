@@ -156,7 +156,7 @@ class Escape_NextGen_Gallery {
 		preg_match( '#nggallery id(\s)*="?(\s)*(?P<id>\d+)#i', $post->post_content, $matches );
 		if ( ! isset( $matches['id'] ) ) {
 			$this->warnings[] = sprintf( "Could not match gallery id in %d", $post->ID );
-			continue;
+			return;
 		}
 
 		// If there are existing images attached the post, 
@@ -175,7 +175,7 @@ class Escape_NextGen_Gallery {
 
 		if ( ! $path || ! $images ) {
 			$this->warnings[] = sprintf( "Could not find images for nggallery %d", $gallery_id );
-			continue;
+			return;
 		}
 
 		foreach ( $images as $image ) {
