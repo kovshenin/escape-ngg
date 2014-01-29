@@ -246,13 +246,17 @@ class Escape_NextGen_Gallery {
 	 * @return void
 	 **/
 	public function get_post_ids() {
-		$query = new WP_Query( array(
+		$args = array(
 			's'           => '[nggallery',
-			'post_type'   => array( 'post', 'page' ),
+			'post_type'   => $post_types,
 			'post_status' => 'any',
 			'nopaging'    => true,
 			'fields'      => 'ids',
-		) );
+		);
+		
+		$args = apply_filters( 'engg_query_args', $args );
+		
+		$query = new WP_Query( $args );
 		return $query->posts;
 	}
 }
