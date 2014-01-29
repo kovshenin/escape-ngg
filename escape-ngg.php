@@ -189,6 +189,7 @@ class Escape_NextGen_Gallery {
 			$result = media_sideload_image( $url, $post->ID, $hash );
 			if ( is_wp_error( $result ) ) {
 				$this->warnings[] = sprintf( "Error loading %s: %s", $url, $result->get_error_message() );
+				continue;
 			} else {
 				$attachments = get_posts( array(
 					'post_parent' => $post->ID,
@@ -218,6 +219,11 @@ class Escape_NextGen_Gallery {
 			wp_update_post( $attachment );
 			$this->images_count++;
 			$this->infos[] = sprintf( "Added attachment for %d", $post->ID );
+		}
+
+		if ( 0 == $this->images_count ) {
+			$this->warnings[] = sprintf( "Could not load images for nggallery %d", $gallery_id );
+			return;
 		}
 
 		// Construct the [gallery] shortcode
