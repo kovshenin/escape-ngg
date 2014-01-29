@@ -254,7 +254,7 @@ class Escape_NextGen_Gallery {
 			'fields'      => 'ids',
 		);
 		
-		$args = apply_filters( 'engg_query_args', $args );
+		$args = apply_filters( 'escape_ngg_query_args', $args );
 		
 		$query = new WP_Query( $args );
 		return $query->posts;
