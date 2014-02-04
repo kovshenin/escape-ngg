@@ -259,7 +259,7 @@ class Escape_NextGen_Gallery {
 	public function get_post_ids( $limit = -1 ) {
 		$args = array(
 			's'           => '[nggallery',
-			'post_type'   => $post_types,
+			'post_type'   => array( 'post', 'page' ),
 			'post_status' => 'any',
 			'nopaging'    => true,
 			'fields'      => 'ids',
