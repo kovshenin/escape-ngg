@@ -119,7 +119,6 @@ class Escape_NextGen_Gallery {
 		
 		foreach ( $post_ids as $post_id ) {
 			$this->process_post( $post_id );
-			break;
 		}
 
 		$this->infos[] = sprintf( "Updated %d posts and %d images.", $this->posts_count, $this->images_count );
