@@ -105,11 +105,17 @@ class Escape_NextGen_Gallery {
 		if ( ! isset( $_GET['escape_ngg_please'] ) || ! current_user_can( 'install_plugins' ) )
 			return;
 
+		$limit = -1;
+
+		if ( isset( $_GET[ 'escape_ngg_limit' ] ) ) {
+			$limit = (int) $_GET[ 'escape_ngg_limit' ];
+		}
+
 		error_reporting( E_ALL );
 		ini_set( 'display_errors', 1 );
 		set_time_limit( 600 );
 
-		$post_ids = $this->get_post_ids();
+		$post_ids = $this->get_post_ids( $limit );
 		
 		foreach ( $post_ids as $post_id ) {
 			$this->process_post( $post_id );
@@ -246,18 +252,18 @@ class Escape_NextGen_Gallery {
 	}
 
 	/**
-	 * 
-	 *
+	 * @param int $limit How many posts to get
 	 *
 	 * @return void
 	 **/
-	public function get_post_ids() {
+	public function get_post_ids( $limit = -1 ) {
 		$args = array(
 			's'           => '[nggallery',
 			'post_type'   => $post_types,
 			'post_status' => 'any',
 			'nopaging'    => true,
 			'fields'      => 'ids',
+			'posts_per_page' => $limit
 		);
 		
 		$args = apply_filters( 'escape_ngg_query_args', $args );
