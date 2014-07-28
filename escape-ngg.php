@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Escape NextGen Gallery
- * Plugin Description: Converts NextGen Galleries to native WordPress Galleries. Read code for instructions.
+ * Description: Converts NextGen Galleries to native WordPress Galleries. Read code for instructions.
  * Author: Konstantin Kovshenin
  * License: GPLv3
  * Version: 1.0
