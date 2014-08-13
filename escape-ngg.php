@@ -227,7 +227,7 @@ class Escape_NextGen_Gallery {
 			$attr = array();
 			$attr['ids'] = implode( ',', $attachments_ids );
 
-			$gallery = '[gallery ';
+			$gallery = '[gallery link="file"';
 			foreach ( $attr as $key => $value ) {
 				$gallery .= sprintf( ' %s="%s"', esc_attr( $key ), esc_attr( $value ) );
 				$gallery .= ']';
