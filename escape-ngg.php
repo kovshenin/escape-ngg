@@ -158,14 +158,27 @@ class Escape_NextGen_Gallery {
 		$post = get_post( $post_id );
 		$matches = null;
 
-		preg_match_all( '#nggallery id(\s)*="?(\s)*(?P<id>\d+)#i', $post->post_content, $matches, PREG_SET_ORDER );
-		if ( ! isset( $matches[0]['id'] ) ) {
-			$this->warnings[] = sprintf( "Could not match gallery id in %d", $post->ID );
-			return;
+		if ( preg_match_all( '#nggallery id(\s)*="?(\s)*(?P<id>\d+)#i', $post->post_content, $matches, PREG_SET_ORDER ) == 0 ) {
+			if ( preg_match_all ( '/<img class="ngg_displayed_gallery[\s\w]*"\s*src="http(s)?:\/\/[\w.]*\/nextgen-attach_to_post\/preview\/id--(?P<id>\d+)"/i', $post->post_content, $matches, PREG_SET_ORDER ) == 0 ) {
+				$this->warnings[] = sprintf( "Could not match gallery id in %d", $post->ID );
+				return;
+			}
+			else {
+				$version = 2;
+			}
+		}
+		else {
+			$version = 1;
 		}
 
 		foreach ($matches as $match) {
 			$gallery_id = $match['id'];
+			if ( $version == 2 ) {
+				$settings_string = $wpdb->get_var( "SELECT post_content FROM {$wpdb->prefix}posts WHERE ID =". intval( $gallery_id ) );
+				$settings = $this->unserialize($settings_string);
+				$old_id = $gallery_id;
+				$gallery_id = $settings['container_ids'][0];
+			}
 			$path = $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}ngg_gallery WHERE gid = ". intval( $gallery_id ), ARRAY_A);
 			$images = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}ngg_pictures WHERE galleryid = ". intval( $gallery_id ) . " ORDER BY sortorder, pid ASC" );
 
@@ -234,7 +247,12 @@ class Escape_NextGen_Gallery {
 			}
 			// Booyaga!
 			$pristine_content = $post->post_content;
-			$post->post_content = preg_replace( "#\[nggallery id(\s)*=\"?(\s)*($gallery_id)(\s)*\]#i", $gallery, $post->post_content );
+			if ( $version == 1 ) {
+				$post->post_content = preg_replace( "#\[nggallery id(\s)*=\"?(\s)*($gallery_id)(\s)*\]#i", $gallery, $post->post_content );
+			}
+			else if ( $version == 2 ) {
+				$post->post_content = preg_replace( '/<img class="ngg_displayed_gallery[\s\w]*"\s*src="http(s)?:\/\/[\w.]*\/nextgen-attach_to_post\/preview\/id--' . $old_id . '"[^>]*>/i', $gallery, $post->post_content );
+			}
 			$post->post_content = apply_filters( 'engg_post_content', $post->post_content, $pristine_content, $attr, $post, $gallery );
 			wp_update_post( $post );
 			$this->infos[] = sprintf( "Updated post %d", $post->ID );
@@ -248,6 +266,7 @@ class Escape_NextGen_Gallery {
 	 * @return void
 	 **/
 	public function get_post_ids( $limit = -1 ) {
+		// Nextgen galleries on the 1.x branch.
 		$args = array(
 			's'           => '[nggallery',
 			'post_type'   => array( 'post', 'page' ),
@@ -260,8 +279,54 @@ class Escape_NextGen_Gallery {
 		$args = apply_filters( 'escape_ngg_query_args', $args );
 
 		$query = new WP_Query( $args );
-		return $query->posts;
+		$posts = (array)$query->posts;
+
+		// Nextgen galleries on the 2.x branch.
+		$args = array(
+			's'           => 'ngg_displayed_gallery',
+			'post_type'   => array( 'post', 'page' ),
+			'post_status' => 'any',
+			'nopaging'    => true,
+			'fields'      => 'ids',
+			'posts_per_page' => $limit
+		);
+
+		$args = apply_filters( 'escape_ngg_query_args', $args );
+
+		$query = new WP_Query( $args );
+		$posts = $posts + $query->posts;
+
+		return $posts;
 	}
+	
+	/* This function taken from Nextgen Gallery source code to handle
+	 * the 'serialization' format they use.
+	 */
+	private function unserialize($value)
+	{
+		$retval = NULL;
+
+		if (is_string($value))
+		{
+			$retval = stripcslashes($value);
+
+			if (strlen($value) > 1)
+			{
+				//Using json_decode here because PHP's unserialize is not Unicode safe
+				$retval = json_decode(base64_decode($retval), TRUE);
+
+				// JSON Decoding failed. Perhaps it's PHP serialized data?
+				if ($retval === NULL) {
+					$er = error_reporting(0);
+					$retval = unserialize($value);
+					error_reporting($er);
+				}
+			}
+		}
+
+	return $retval;
+	}
+
 }
 
 // Initiate the singleton
