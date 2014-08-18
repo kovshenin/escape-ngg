@@ -1,7 +1,7 @@
 Escape NextGen Gallery
 ======================
 
-This plugin will scan through all your posts and pages for the [nggallery] shortcode.
+This plugin will scan through all your posts and pages for the [nggallery] shortcode, as well as Nextgen 2.x branch-style img tag placeholders.
 
 It will loop through all images associated with that gallery and recreate them as native WordPress attachments instead. Finally it will replace the [nggallery] shortcode with the [gallery] shortcode native to WordPress.
 
@@ -13,7 +13,6 @@ It will loop through all images associated with that gallery and recreate them a
 
 ## Limitations 
 - doesn't work with shortcodes other than [nggallery]
-- doesn't work when more than one gallery on page
 
 ## Notes
 
