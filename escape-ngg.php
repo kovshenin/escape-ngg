@@ -4,7 +4,7 @@
  * Description: Converts NextGen Galleries to native WordPress Galleries. Read code for instructions.
  * Author: Konstantin Kovshenin
  * License: GPLv3
- * Version: 1.0
+ * Version: 1.1
  *
  * This plugin will scan through all your posts and pages for the [nggallery] shortcode. 
  * It will loop through all images associated with that gallery and recreate them as native 
@@ -16,7 +16,7 @@
  *
  * Limitations: 
  * - doesn't work with shortcodes other than [nggallery]
- * - doesn't work when more than one gallery on page
+ * - does work when more than one gallery on page
  *
  * @uses media_sideload_image to recreate your attachment posts
  */
@@ -156,14 +156,7 @@ class Escape_NextGen_Gallery {
 	public function process_post( $post_id ) {
 		global $wpdb;
 		$post = get_post( $post_id );
-		$matches = null;
-
-		preg_match( '#nggallery id(\s)*="?(\s)*(?P<id>\d+)#i', $post->post_content, $matches );
-		if ( ! isset( $matches['id'] ) ) {
-			$this->warnings[] = sprintf( "Could not match gallery id in %d", $post->ID );
-			return;
-		}
-
+    
 		// If there are existing images attached the post, 
 		// let's remember to exclude them from our new gallery.
 		$existing_attachments_ids = get_posts( array(
@@ -173,6 +166,30 @@ class Escape_NextGen_Gallery {
 			'post_mime_type' => 'image',
 			'fields' => 'ids',
 		) );
+
+		$pristine_content = $post->post_content;
+
+    preg_replace_callback( '#nggallery id(\s)*="?(\s)*(?P<id>\d+)#i', 
+                           function($matches) { return $this->replace_nggallery($post->ID, $matches, $existing_attachment_ids); }, 
+                           $post->post_content );
+    
+		// Booyaga!
+		$post->post_content = apply_filters( 'engg_post_content', $post->post_content, $pristine_content, $attr, $post, $gallery );
+
+		wp_update_post( $post );
+		$this->posts_count++;
+		$this->infos[] = sprintf( "Updated post %d", $post->ID );	
+  }
+
+  private function replace_nggallery($post_id, $matches, $existing_attachment_ids) {
+
+		global $wpdb;
+
+		if ( ! isset( $matches['id'] ) ) {
+			$this->warnings[] = sprintf( "Could not match gallery id in %d", $post_id );
+			return;
+		}
+
 
 		$gallery_id = $matches['id'];
 		$path = $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}ngg_gallery WHERE gid = ". intval( $gallery_id ), ARRAY_A  );
@@ -184,6 +201,7 @@ class Escape_NextGen_Gallery {
 		}
 
 		foreach ( $images as $image ) {
+
 			$url = home_url( trailingslashit( $path['path'] ) . $image->filename );
 			$url = apply_filters( 'engg_image_url', $url, $path['path'], $image->filename );
 			
@@ -191,20 +209,20 @@ class Escape_NextGen_Gallery {
 			// Let's use a hash trick here to find our attachment post after it's been sideloaded.
 			$hash = md5( 'attachment-hash' . $url . $image->description . time() . rand( 1, 999 ) );
 
-			$result = media_sideload_image( $url, $post->ID, $hash );
+			$result = media_sideload_image( $url, $post_id, $hash );
 			if ( is_wp_error( $result ) ) {
 				$this->warnings[] = sprintf( "Error loading %s: %s", $url, $result->get_error_message() );
 				continue;
 			} else {
 				$attachments = get_posts( array(
-					'post_parent' => $post->ID,
+					'post_parent' => $post_id,
 					's' => $hash,
 					'post_type' => 'attachment',
 					'posts_per_page' => -1,
 				) );
 
 				if ( ! $attachments || ! is_array( $attachments ) || count( $attachments ) != 1 ) {
-					$this->warnings[] = sprintf( "Could not insert attachment for %d", $post->ID );
+					$this->warnings[] = sprintf( "Could not insert attachment for %d", $post_id );
 					continue;
 				}
 			}
@@ -223,7 +241,7 @@ class Escape_NextGen_Gallery {
 
 			wp_update_post( $attachment );
 			$this->images_count++;
-			$this->infos[] = sprintf( "Added attachment for %d", $post->ID );
+			$this->infos[] = sprintf( "Added attachment for %d", $post_id );
 		}
 
 		if ( 0 == $this->images_count ) {
@@ -241,14 +259,9 @@ class Escape_NextGen_Gallery {
 			$gallery .= sprintf( ' %s="%s"', esc_attr( $key ), esc_attr( $value ) );
 		$gallery .= ']';
 
-		// Booyaga!
-		$pristine_content = $post->post_content;
-		$post->post_content = preg_replace( '#\[nggallery[^\]]*\]#i', $gallery, $post->post_content );
-		$post->post_content = apply_filters( 'engg_post_content', $post->post_content, $pristine_content, $attr, $post, $gallery );
-		wp_update_post( $post );
-		$this->posts_count++;
-		$this->infos[] = sprintf( "Updated post %d", $post->ID );	
-	}
+    return $gallery;
+  }
+
 
 	/**
 	 * @param int $limit How many posts to get
