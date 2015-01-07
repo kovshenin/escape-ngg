@@ -202,6 +202,31 @@ class Escape_NextGen_Gallery {
 
 		foreach ( $images as $image ) {
 
+      $this->attach_image($post_id, $path, $image);
+
+		}
+
+		if ( 0 == $this->images_count ) {
+			$this->warnings[] = sprintf( "Could not load images for nggallery %d", $gallery_id );
+			return;
+		}
+
+		// Construct the [gallery] shortcode
+		$attr = array();
+		if ( $existing_attachments_ids )
+			$attr['exclude'] = implode( ',', $existing_attachments_ids );
+
+		$gallery = '[gallery';
+		foreach ( $attr as $key => $value )
+			$gallery .= sprintf( ' %s="%s"', esc_attr( $key ), esc_attr( $value ) );
+		$gallery .= ']';
+
+    return $gallery;
+  }
+
+
+  private function attach_image($post_id, $path, $image) {
+
 			$url = home_url( trailingslashit( $path['path'] ) . $image->filename );
 			$url = apply_filters( 'engg_image_url', $url, $path['path'], $image->filename );
 			
@@ -242,24 +267,8 @@ class Escape_NextGen_Gallery {
 			wp_update_post( $attachment );
 			$this->images_count++;
 			$this->infos[] = sprintf( "Added attachment for %d", $post_id );
-		}
 
-		if ( 0 == $this->images_count ) {
-			$this->warnings[] = sprintf( "Could not load images for nggallery %d", $gallery_id );
-			return;
-		}
-
-		// Construct the [gallery] shortcode
-		$attr = array();
-		if ( $existing_attachments_ids )
-			$attr['exclude'] = implode( ',', $existing_attachments_ids );
-
-		$gallery = '[gallery';
-		foreach ( $attr as $key => $value )
-			$gallery .= sprintf( ' %s="%s"', esc_attr( $key ), esc_attr( $value ) );
-		$gallery .= ']';
-
-    return $gallery;
+      return $attachment;
   }
 
 
