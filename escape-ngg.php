@@ -102,24 +102,33 @@ class Escape_NextGen_Gallery {
 	 * @return void
 	 **/
 	public function action_admin_init() {
-		if ( ! isset( $_GET['escape_ngg_please'] ) || ! current_user_can( 'install_plugins' ) )
+		if ( ! current_user_can( 'install_plugins' ) )
 			return;
-
-		$limit = -1;
-
-		if ( isset( $_GET[ 'escape_ngg_limit' ] ) ) {
-			$limit = (int) $_GET[ 'escape_ngg_limit' ];
-		}
 
 		error_reporting( E_ALL );
 		ini_set( 'display_errors', 1 );
 		set_time_limit( 600 );
 
-		$post_ids = $this->get_post_ids( $limit );
-		
-		foreach ( $post_ids as $post_id ) {
-			$this->process_post( $post_id );
-		}
+		if (isset( $_GET['escape_ngg_please'] ) ) {
+            $limit = -1;
+
+            if ( isset( $_GET[ 'escape_ngg_limit' ] ) ) {
+                $limit = (int) $_GET[ 'escape_ngg_limit' ];
+            }
+
+            $post_ids = $this->get_post_ids( $limit );
+            
+            foreach ( $post_ids as $post_id ) {
+                $this->process_post( $post_id );
+            }
+        } elseif (isset($_GET['escape_ngg_base_page_id'])) {
+            $basePageId = (int) $_GET['escape_ngg_base_page_id'];
+
+            $gallerySet = $this->get_list_ngg_galleries();
+            foreach($gallerySet as $gallery) {
+                $this->move_gallery($gallery, $basePageId);
+            }
+        }
 
 		$this->infos[] = sprintf( "Updated %d posts and %d images.", $this->posts_count, $this->images_count );
 
@@ -176,19 +185,47 @@ class Escape_NextGen_Gallery {
 
 		$gallery_id = $matches['id'];
 		$path = $wpdb->get_row( "SELECT * FROM {$wpdb->prefix}ngg_gallery WHERE gid = ". intval( $gallery_id ), ARRAY_A  );
-		$images = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}ngg_pictures WHERE galleryid = ". intval( $gallery_id ) . " ORDER BY sortorder, pid ASC" );
+        
+        $this->_copy_images($post, $path);
+        
+        if ( 0 == $this->images_count ) {
+			$this->warnings[] = sprintf( "Could not load images for nggallery %d", $gallery_id );
+			return;
+		}
 
-		if ( ! $path || ! $images ) {
+		// Construct the [gallery] shortcode
+		$attr = array();
+		if ( $existing_attachments_ids )
+			$attr['exclude'] = implode( ',', $existing_attachments_ids );
+
+		$gallery = '[gallery';
+		foreach ( $attr as $key => $value )
+			$gallery .= sprintf( ' %s="%s"', esc_attr( $key ), esc_attr( $value ) );
+		$gallery .= ']';
+
+		// Booyaga!
+		$pristine_content = $post->post_content;
+		$post->post_content = preg_replace( '#\[nggallery[^\]]*\]#i', $gallery, $post->post_content );
+		$post->post_content = apply_filters( 'engg_post_content', $post->post_content, $pristine_content, $attr, $post, $gallery );
+		wp_update_post( $post );
+		$this->posts_count++;
+		$this->infos[] = sprintf( "Updated post %d", $post->ID );	
+	}
+
+    protected function _copy_images($post, $gallery)
+    {
+        $images = $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}ngg_pictures WHERE galleryid = ". intval($gallery->gid) . " ORDER BY sortorder, pid ASC" );
+
+		if ( ! $gallery || ! $images ) {
 			$this->warnings[] = sprintf( "Could not find images for nggallery %d", $gallery_id );
 			return;
 		}
 
+        $attachmentIds = [];
 		foreach ( $images as $image ) {
-			$url = home_url( trailingslashit( $path['path'] ) . $image->filename );
-			$url = apply_filters( 'engg_image_url', $url, $path['path'], $image->filename );
-			
-
-			// Let's use a hash trick here to find our attachment post after it's been sideloaded.
+			$url = home_url( trailingslashit( $gallery['path'] ) . $image->filename );
+			$url = apply_filters( 'engg_image_url', $url, $gallery['path'], $image->filename );
+		    // Let's use a hash trick here to find our attachment post after it's been sideloaded.
 			$hash = md5( 'attachment-hash' . $url . $image->description . time() . rand( 1, 999 ) );
 
 			$result = media_sideload_image( $url, $post->ID, $hash );
@@ -219,36 +256,15 @@ class Escape_NextGen_Gallery {
 			$attachment->post_content = $image->description;
 			$attachment->menu_order = $image->sortorder;
 
-			update_post_meta( $attachment->ID, '_wp_attachment_image_alt', $image->alttext );
+            update_post_meta( $attachment->ID, '_wp_attachment_image_alt', $image->alttext );
+            $attachmentIds[] = $attachment->ID;
 
 			wp_update_post( $attachment );
 			$this->images_count++;
 			$this->infos[] = sprintf( "Added attachment for %d", $post->ID );
-		}
-
-		if ( 0 == $this->images_count ) {
-			$this->warnings[] = sprintf( "Could not load images for nggallery %d", $gallery_id );
-			return;
-		}
-
-		// Construct the [gallery] shortcode
-		$attr = array();
-		if ( $existing_attachments_ids )
-			$attr['exclude'] = implode( ',', $existing_attachments_ids );
-
-		$gallery = '[gallery';
-		foreach ( $attr as $key => $value )
-			$gallery .= sprintf( ' %s="%s"', esc_attr( $key ), esc_attr( $value ) );
-		$gallery .= ']';
-
-		// Booyaga!
-		$pristine_content = $post->post_content;
-		$post->post_content = preg_replace( '#\[nggallery[^\]]*\]#i', $gallery, $post->post_content );
-		$post->post_content = apply_filters( 'engg_post_content', $post->post_content, $pristine_content, $attr, $post, $gallery );
-		wp_update_post( $post );
-		$this->posts_count++;
-		$this->infos[] = sprintf( "Updated post %d", $post->ID );	
-	}
+        }
+        return $attachmentIds;
+    }
 
 	/**
 	 * @param int $limit How many posts to get
@@ -269,7 +285,42 @@ class Escape_NextGen_Gallery {
 		
 		$query = new WP_Query( $args );
 		return $query->posts;
-	}
+    }
+
+    /**
+     * @return array pageId for each galleryId [galleryId => pageId]
+     */
+    public function move_gallery($gallery, $parentPageId)
+    {
+        global $wpdb;
+        $contentTpl = '[gallery link="file" ids="%s"]';
+
+        $newPage = array(
+          'post_title'    => $gallery->title,
+          'post_status'   => 'publish',
+          'post_type'     => 'page',
+          'post_parent'   => $parentPageId
+        );
+        $pageId = wp_insert_post($newPage, true);
+        if ($pageId instanceof WP_Error) {
+            $this->wornings[] = "ERROR: page was not created for gallery: " . $gallery->title . '<\br>' . implode('<br>', $pageId->errors) . '<br>';
+            continue;
+        }
+
+        $page = get_post($pageId);
+
+        $attachIdSet = $this->_copy_images($page, $gallery);
+        $page->post_content = sprintf($contentTpl, impolode(', ', $attachIdSet));
+        wp_update_post($page);
+        $this->posts_count++;
+        $this->infos[] = sprintf( "Updated post %d", $post->ID );
+    }
+
+    public function get_list_ngg_galleries()
+    {
+        global $wpdb;
+        return $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}ngg_gallery"));
+    }
 }
 
 // Initiate the singleton
